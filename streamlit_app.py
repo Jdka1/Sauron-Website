@@ -12,7 +12,7 @@ import numpy as np
 
 
 with st.sidebar:
-        st.header("Variable Weights")
+        st.header("Variables")
         crime_weight = st.slider("City Crime Rate Importance For Targetability Weight", min_value=1.0, max_value=5.0, step=0.1, value=1.0)
         wealth_weight = st.slider("City Wealth Importance For Targetability Weight", min_value=1.0, max_value=5.0, step=0.1, value=1.0)
         minimum_population = st.slider("Minimum Population", min_value=0, max_value=1000000, step=1000, value=50000)
@@ -26,6 +26,7 @@ def map_to_rgb(viability):
     alpha = (viability/150)
     return (r, g, b, alpha)
 
+st.title('Most Targetable Cities')
 
 df = get_targetability_df(crime_weight=crime_weight, wealth_weight=wealth_weight, minimum_population=minimum_population)
 st.dataframe(df)
