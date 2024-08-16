@@ -1,6 +1,15 @@
+# Ensure setuptools is installed and at a compatible version
+setuptools>=51.0.0
+
+# Your existing dependencies
 pandas==1.3.3
 scikit-learn==0.24.2
 requests==2.26.0
 xlrd>=2.0.1
 folium
-setuptools
+
+# Add wheel to support building dependencies
+wheel>=0.44.0
+
+# Optionally, add pip to ensure the latest version is used
+pip>=24.2.0
