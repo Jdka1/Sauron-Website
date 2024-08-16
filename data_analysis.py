@@ -18,12 +18,12 @@ def merge_latlong(df):
 
 def get_targetability_df(crime_weight, wealth_weight, minimum_population):
     crime_df = pd.read_excel(f'{DATA_PATH}/Table_8_Offenses_Known_to_Law_Enforcement_by_State_by_City_2019.xls', skiprows=3).iloc[:-8]
-    crime_df['State'] = crime_df['State'].str.replace('\d+', '', regex=True)
-    crime_df['City'] = crime_df['City'].str.replace('\d+', '', regex=True)
+    crime_df['State'] = crime_df['State'].str.replace(r'\d+', '', regex=True)
+    crime_df['City'] = crime_df['City'].str.replace(r'\d+', '', regex=True)
     crime_df['City'] = crime_df['City'].str.replace(',', '')
     crime_df['State'] = crime_df['State'].ffill()
 
-    crime_df.columns = crime_df.columns.str.replace('\n', ' ', regex=False).str.replace('\d+', '', regex=True)
+    crime_df.columns = crime_df.columns.str.replace('\n', ' ', regex=False).str.replace(r'\d+', '', regex=True)
     crime_df = crime_df[['State', 'City', 'Population', 'Robbery', 'Property crime', 'Burglary', 'Arson']]
     crime_df['State'] = crime_df['State'].str.title()
     # crime_df['Total residential crime'] = crime_df[['Robbery', 'Property crime', 'Burglary', 'Arson']].sum(axis=1)
@@ -68,19 +68,20 @@ def get_targetability_df(crime_weight, wealth_weight, minimum_population):
 
 
 
-
-
     df = pd.merge(crime_df, income_df, on=['State', 'City'])
     df = df[['State', 'City', 'Population', 'Total residential crime', 'Residential crime per capita', 'Estimate!!Households!!Total', 'Total target households']]
 
-    columns_to_normalize = ['Total target households', 'Residential crime per capita']
-    scaler = MinMaxScaler()
-    df[[f'Normalized {col}' for col in columns_to_normalize]] = scaler.fit_transform(df[columns_to_normalize])
+    df['Targetable households (by wealth)'] = df['Estimate!!Households!!Total'] * df['Total target households']
 
-    df['Target viability'] = (df['Normalized Total target households']**wealth_weight) * (df['Normalized Residential crime per capita']**crime_weight)
+    columns_to_normalize = ['Targetable households (by wealth)', 'Residential crime per capita']
+    for col in columns_to_normalize:
+        df[f'Normalized {col}'] = (df[col] - df[col].min()) / (df[col].max() - df[col].min())
+
+    # normalized [0, 1]
+    nullifying_divisor = 5
+    df['Target viability'] = ((df['Normalized Targetable households (by wealth)']**(wealth_weight/nullifying_divisor)) * (df['Normalized Residential crime per capita']**(crime_weight/nullifying_divisor)))
 
     df.insert(2, 'Target viability', df.pop('Target viability'))
-    df['Targetable households (by wealth)'] = df['Estimate!!Households!!Total'] * df['Total target households']
     df = df[['State', 'City', 'Population', 'Target viability', 'Targetable households (by wealth)', 'Total residential crime']]
 
     scaler = MinMaxScaler(feature_range=(0, 100))
